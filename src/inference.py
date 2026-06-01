@@ -1,5 +1,6 @@
 import joblib
 import numpy as np
+import tempfile
 from pathlib import Path
 from sklearn.datasets import load_iris
 from sklearn.pipeline import Pipeline
@@ -10,6 +11,12 @@ from sklearn.linear_model import LogisticRegression
 def _default_model_path():
     # Resolve path relative to the project root (parent of `src`)
     return Path(__file__).resolve().parent.parent / "models" / "best_model.pkl"
+
+
+def _temp_model_path():
+    temp_dir = Path(tempfile.gettempdir()) / "iris_classification"
+    temp_dir.mkdir(parents=True, exist_ok=True)
+    return temp_dir / "best_model.pkl"
 
 
 def _train_default_model(model_path: Path):
@@ -33,17 +40,19 @@ def predict(sample, model_path: str | Path | None = None):
         model_path: optional path to model file; if None uses project `models/best_model.pkl`
     """
     model_file = Path(model_path) if model_path is not None else _default_model_path()
-    if not model_file.exists():
-        _train_default_model(model_file)
-    model = joblib.load(str(model_file))
-    """Predict class for a sample or batch.
 
-    Args:
-        sample: list or array-like of shape (4,) or (n,4)
-        model_path: optional path to model file; if None uses project `models/best_model.pkl`
-    """
-    model_file = Path(model_path) if model_path is not None else _default_model_path()
-    model = joblib.load(str(model_file))
+    if not model_file.exists():
+        try:
+            model = _train_default_model(model_file)
+        except OSError:
+            temp_path = _temp_model_path()
+            if not temp_path.exists():
+                model = _train_default_model(temp_path)
+            else:
+                model = joblib.load(str(temp_path))
+    else:
+        model = joblib.load(str(model_file))
+
     arr = np.array(sample)
     if arr.ndim == 1:
         arr = arr.reshape(1, -1)

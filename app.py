@@ -1,11 +1,11 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from src.inference import predict
 
 app = Flask(__name__)
 
 @app.route("/", methods=["GET"])
 def home():
-    return jsonify({"message": "Iris classification app is running"})
+    return render_template("index.html")
 
 @app.route("/predict", methods=["POST"])
 def predict_flower():

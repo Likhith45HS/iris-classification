@@ -15,7 +15,11 @@ def predict_flower():
         return jsonify({"error": "features field is required"}), 400
 
     try:
-        prediction = int(predict(features))
+        prediction = predict(features)
+        if hasattr(prediction, '__iter__'):
+            prediction = int(prediction[0])
+        else:
+            prediction = int(prediction)
         return jsonify({"prediction": prediction})
     except Exception as exc:
         return jsonify({"error": str(exc)}), 500
